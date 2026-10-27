@@ -182,6 +182,14 @@ The ablation difference family is two-sided against 0 with the same
 Holm rule. Bootstrap p-values cannot go below about 1/(resamples + 1),
 so Holm-adjusted p-values are floored accordingly.
 
+A3 (committed before the CONFIRM run). Smoke runs on Python 3.10 and 3.11
+differed from 3.12 and 3.13 in 15 tie-dependent rows (the pure-phase null
+and the sigma 0 threshold), because the built-in `sum` changed its float
+summation in 3.12. The package now uses exactly rounded sums (`fsum`) in
+the normalisation, overlap and projection, after which smoke outputs are
+identical on 3.10, 3.11, 3.12 and 3.13. No hypothesis, threshold or test
+changed.
+
 The DEV result file was regenerated after these additions; the CONFIRM
 file is produced only after these amendments.
 

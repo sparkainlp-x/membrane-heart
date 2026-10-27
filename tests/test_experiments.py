@@ -116,6 +116,21 @@ class TestStudies(unittest.TestCase):
         self.assertLess(self.a["E/s0.15/acc_ungated"], 0.45)
         self.assertEqual(self.a["E/s0.15/max_nbr_overlap"], 1.0)
 
+    def test_pinned_values_are_identical_on_every_python_version(self):
+        # Guards cross-version drift (exactly rounded sums are used so
+        # that Python 3.10 to 3.13 agree, including tie-dependent keys).
+        pinned = {
+            "A/s0.15/tau": 0.326733,
+            "A/s0.15/acc_ungated": 0.99,
+            "A/s0.30/acc_gated": 0.78,
+            "E/s0.15/frac_index0": 0.71,
+            "A/s0.00/tau": 0.638614,
+            "G/s0.30/acc_magnitude_only": 0.49,
+            "D/refuse_conjugate_wave": 0.0,
+        }
+        for key, value in pinned.items():
+            self.assertAlmostEqual(self.a[key], value, places=6, msg=key)
+
     def test_trials_for(self):
         self.assertEqual(run_all.trials_for("A/s0.15/acc_ungated"), 100)
         self.assertEqual(run_all.trials_for("D/refuse_haar"), 50)

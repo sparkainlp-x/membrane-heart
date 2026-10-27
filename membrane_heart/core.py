@@ -245,14 +245,19 @@ class HeartGeometry:
 
 # ---------------------------------------------------------------- membrane
 def normalize(v):
-    n = math.sqrt(sum(abs(c) ** 2 for c in v))
+    # math.fsum (exactly rounded) keeps results identical across Python
+    # versions; built-in sum() changed its float summation in 3.12.
+    n = math.sqrt(math.fsum(abs(c) ** 2 for c in v))
     if n == 0:
         raise ValueError("cannot normalize a zero vector")
     return [c / n for c in v]
 
 
 def overlap(field, pattern):
-    return sum(p.conjugate() * f for p, f in zip(pattern, field))
+    """<pattern, field> with exactly rounded real and imaginary sums."""
+    prods = [p.conjugate() * f for p, f in zip(pattern, field)]
+    return complex(math.fsum(c.real for c in prods),
+                   math.fsum(c.imag for c in prods))
 
 
 def is_finite_field(field):
@@ -435,7 +440,7 @@ class MembraneHeart:
         ms = self.overlaps(field)
         if not is_finite_field(ms):
             return None, [0.0] * len(ms)
-        tot = sum(abs(m) ** 2 for m in ms)
+        tot = math.fsum(abs(m) ** 2 for m in ms)
         if tot == 0:
             return None, [0.0] * len(ms)
         probs = [abs(m) ** 2 / tot for m in ms]
