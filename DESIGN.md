@@ -16,7 +16,9 @@
 - **Four phases, not a full cycle.** Four snapshots (quarter-period
   apart) are enough to show storage, recognition, and refusal.
   More snapshots would blur into each other (neighbouring phases
-  overlap heavily) and teach nothing new.
+  overlap heavily) and teach nothing new. (Measured later, `docs/RESULTS.md` study B: 6 and
+  8 stored phases stay well above chance but lose accuracy faster as
+  noise grows, so the note is partly right.)
 - **Envelope, not pure phase  -  a bug caught by the tests.** The
   first version stored pure phase waves; snapshots then differed
   only by a global phase, which |overlap| cannot see, and noisy

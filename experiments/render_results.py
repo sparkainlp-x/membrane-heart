@@ -294,6 +294,58 @@ def render(confirm, dev):
     return "\n".join(out)
 
 
+README_BEGIN = "<!-- results:begin -->"
+README_END = "<!-- results:end -->"
+
+
+def readme_block(confirm):
+    """Headline table for the README, generated from the JSON."""
+    R = confirm["rows"]
+    rows = [
+        ("Recognition accuracy, sigma 0.15", "A/s0.15/acc_ungated"),
+        ("Recognition accuracy, sigma 0.30", "A/s0.30/acc_ungated"),
+        ("Recognition accuracy, sigma 0.60 (chance 0.25)",
+         "A/s0.60/acc_ungated"),
+        ("Haar-random fields refused, sigma 0.15", "A/s0.15/refuse_haar"),
+        ("Scrambled-phase fields refused, sigma 0.15",
+         "A/s0.15/refuse_phase_scramble"),
+        ("Label-shuffled recognition (chance 0.25)", "D/shuffled/acc_ungated"),
+        ("Pure phase wave stored, recognition (null; chance 0.25)",
+         "E/s0.15/acc_ungated"),
+        ("Time-shifted wave between stored phases refused (noise-free)",
+         "D/refuse_time_shift_half_spacing"),
+        ("Half-masked wave refused (noise-free)",
+         "D/refuse_partial_random_half"),
+        ("Globally phase-rotated stored wave refused (blind spot)",
+         "D/refuse_global_phase_rotation"),
+        ("Time-shifted wave refused, noise matched to in-library",
+         "D/noisy/refuse_time_shift_half_spacing"),
+    ]
+    lines = [README_BEGIN,
+             f"Confirmation seeds {confirm['meta']['seeds'][0]} to "
+             f"{confirm['meta']['seeds'][1]} "
+             f"({confirm['meta']['replicates']} random layouts), 95 % "
+             "bootstrap intervals over layouts, all SYNTHETIC. Full tables, "
+             "ablations, baselines and limits: `docs/RESULTS.md`.",
+             ""]
+    lines.append(table(["Quantity", "Mean [95% interval]"],
+                       [[name, ci(R[key])] for name, key in rows]))
+    lines.append("")
+    lines.append("All nine pre-registered hypotheses were met on the "
+                 "confirmation seeds (`docs/RESULTS.md`, section 1). The "
+                 "gate separates random-like fields from stored waves and "
+                 "does not reliably refuse deformed stored waves; this is a "
+                 "finding about the toy, not about any heart.")
+    lines.append(README_END)
+    return "\n".join(lines)
+
+
+def apply_readme(readme_text, confirm):
+    a = readme_text.index(README_BEGIN)
+    b = readme_text.index(README_END) + len(README_END)
+    return readme_text[:a] + readme_block(confirm) + readme_text[b:]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
@@ -304,18 +356,26 @@ def main(argv=None):
         return 2
     text = render(confirm, load("dev.json"))
     target = os.path.join(DOCS, "RESULTS.md")
+    readme = os.path.join(ROOT, "README.md")
+    with open(readme, encoding="utf-8") as fh:
+        readme_now = fh.read()
+    readme_new = apply_readme(readme_now, confirm)
     if args.check:
         with open(target, encoding="utf-8") as fh:
             current = fh.read()
-        if current != text:
-            print("docs/RESULTS.md is out of date; run "
-                  "python -m experiments.render_results", file=sys.stderr)
+        if current != text or readme_now != readme_new:
+            print("docs/RESULTS.md or the README results block is out of "
+                  "date; run python -m experiments.render_results",
+                  file=sys.stderr)
             return 1
-        print("docs/RESULTS.md matches the committed results")
+        print("docs/RESULTS.md and README results match the committed "
+              "results")
         return 0
     with open(target, "w", encoding="utf-8") as fh:
         fh.write(text)
-    print(f"wrote {target}")
+    with open(readme, "w", encoding="utf-8") as fh:
+        fh.write(readme_new)
+    print(f"wrote {target} and the README results block")
     return 0
 
 

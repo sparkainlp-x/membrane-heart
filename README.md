@@ -91,6 +91,28 @@ from the v0.1.0 README (0.146) because the v0.1.0 scrambled-field
 generator was defective; see `CHANGELOG.md`. `--legacy-scrambled`
 reproduces the v0.1.0 value.
 
+## Headline results (SYNTHETIC)
+
+<!-- results:begin -->
+Confirmation seeds 5000 to 5199 (200 random layouts), 95 % bootstrap intervals over layouts, all SYNTHETIC. Full tables, ablations, baselines and limits: `docs/RESULTS.md`.
+
+| Quantity | Mean [95% interval] |
+|---|---|
+| Recognition accuracy, sigma 0.15 | 1.000 [0.999, 1.000] |
+| Recognition accuracy, sigma 0.30 | 0.901 [0.896, 0.905] |
+| Recognition accuracy, sigma 0.60 (chance 0.25) | 0.545 [0.539, 0.552] |
+| Haar-random fields refused, sigma 0.15 | 0.996 [0.994, 0.997] |
+| Scrambled-phase fields refused, sigma 0.15 | 0.998 [0.997, 0.999] |
+| Label-shuffled recognition (chance 0.25) | 0.246 [0.240, 0.252] |
+| Pure phase wave stored, recognition (null; chance 0.25) | 0.251 [0.247, 0.255] |
+| Time-shifted wave between stored phases refused (noise-free) | 0.000 [0.000, 0.000] |
+| Half-masked wave refused (noise-free) | 0.000 [0.000, 0.000] |
+| Globally phase-rotated stored wave refused (blind spot) | 0.000 [0.000, 0.000] |
+| Time-shifted wave refused, noise matched to in-library | 0.314 [0.299, 0.328] |
+
+All nine pre-registered hypotheses were met on the confirmation seeds (`docs/RESULTS.md`, section 1). The gate separates random-like fields from stored waves and does not reliably refuse deformed stored waves; this is a finding about the toy, not about any heart.
+<!-- results:end -->
+
 ## Studies
 
 `docs/PROTOCOL.md` was committed before any study result existed and
