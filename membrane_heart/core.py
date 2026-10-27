@@ -214,6 +214,25 @@ def noisy(field, sigma, rng):
     )
 
 
+def phase_scrambled_field(n, seed):
+    """Unit-magnitude field with i.i.d. uniform phases (seeded)."""
+    rng = random.Random(seed)
+    return normalize([
+        complex(math.cos(a), math.sin(a))
+        for a in (rng.uniform(0, 2 * math.pi) for _ in range(n))
+    ])
+
+
+def legacy_scrambled_field(n, seed):
+    """v0.1.0 behaviour: cos and sin drawn from different angles."""
+    rng = random.Random(seed)
+    return normalize([
+        complex(math.cos(rng.uniform(0, 2 * math.pi)),
+                math.sin(rng.uniform(0, 2 * math.pi)))
+        for _ in range(n)
+    ])
+
+
 class MembraneHeart:
     """Travelling-wave heart + holographic membrane + refusal gate."""
 
@@ -288,14 +307,19 @@ class MembraneHeart:
         return "accept", self.PHASE_NAMES[winner], probs
 
     def scrambled_field(self, seed):
-        """A broken beat: same unit magnitudes, random phases.
+        """A broken beat: unit magnitudes, uniformly random phases.
 
-        This is the toy 'arrhythmia': the wave no longer travels,
-        so coherence collapses and the gate should refuse it.
+        The wave no longer travels, so coherence collapses and the
+        gate should refuse it. This is a SYNTHETIC out-of-library
+        field, not a model of any condition.
         """
-        rng = random.Random(seed)
-        return normalize([
-            complex(math.cos(rng.uniform(0, 2 * math.pi)),
-                    math.sin(rng.uniform(0, 2 * math.pi)))
-            for _ in range(self.n)
-        ])
+        return phase_scrambled_field(self.n, seed)
+
+    def legacy_scrambled_field(self, seed):
+        """The v0.1.0 generator as supplied (kept for reproduction).
+
+        It draws two independent angles per neuron (one for the real
+        part, one for the imaginary part), so magnitudes are NOT unit
+        despite the v0.1.0 description. See DESIGN.md.
+        """
+        return legacy_scrambled_field(self.n, seed)
