@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased; no tag or DOI)
+## 0.1.0 (2026-10-26)
 
 Starting point: the supplied v0.1.0 package, imported unchanged in the
 first commit of this history. Changes made on top of it:

@@ -23,7 +23,7 @@ class TestReadmeClaims(unittest.TestCase):
         text = read("README.md")
         for needle in ("SYNTHETIC", "Not a medical model",
                        "not a medical device", "not a",
-                       "No release, tag or DOI has been issued yet",
+                       "released on GitHub on 2026-10-26",
                        "AGPL-3.0-only", "Copyright (C) 2026 "
                        "Jean-Fran\u00e7ois Brisson"):
             self.assertIn(needle, text)
