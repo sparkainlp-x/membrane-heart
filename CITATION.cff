@@ -3,6 +3,7 @@ message: "If you use this software, please cite it using the metadata in this fi
 title: "membrane-heart"
 type: software
 version: 0.1.0
+date-released: 2026-10-26
 authors:
   - family-names: Brisson
     given-names: Jean-François
@@ -15,7 +16,7 @@ abstract: >-
   travelling phase wave; snapshots are stored in a complex outer-product
   associative memory and a calibrated gate names or refuses a probe.
   Classical, stdlib-only Python. Not a medical model, not a medical
-  device, not a diagnosis. No release or DOI has been issued yet.
+  device, not a diagnosis.
 keywords:
   - associative-memory
   - toy-model

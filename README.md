@@ -9,7 +9,9 @@ reproducible.
 Copyright (C) 2026 Jean-François Brisson (Spark AI NLP). Licensed under
 AGPL-3.0-only; the full text is in `LICENSE`.
 
-Status: version 0.1.0. No release, tag or DOI has been issued yet.
+Status: version 0.1.0, released on GitHub on 2026-10-26 and archived on
+Zenodo; the DOIs are listed under "How to cite" once the archive record
+exists.
 
 ## Not a medical model
 
@@ -160,8 +162,8 @@ conclusions is implied.
 
 ## How to cite
 
-See `CITATION.cff`. Until a release and DOI exist, cite the repository
-URL, version 0.1.0 and the commit hash:
+See `CITATION.cff`. Cite the repository URL, version 0.1.0 and the
+release tag (a DOI is listed here once the Zenodo record exists):
 
 Brisson, J.-F. (2026). membrane-heart (version 0.1.0) [SYNTHETIC toy
 software]. https://github.com/sparkainlp-x/membrane-heart

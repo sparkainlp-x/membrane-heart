@@ -17,5 +17,13 @@
     "synthetic",
     "reproducible-research"
   ],
-  "notes": "Synthetic toy simulation. Not a medical model. Deposit metadata only; no release has been approved or made."
+  "notes": "Synthetic toy simulation (classical software). Not a medical model, not a medical device, not a diagnosis; nothing transfers to real physiology.",
+  "publication_date": "2026-10-26",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/sparkainlp-x/membrane-heart",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ]
 }
