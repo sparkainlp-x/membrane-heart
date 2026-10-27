@@ -2,6 +2,8 @@
 
 ## 0.1.0 (2026-10-26)
 
+Archived on Zenodo: version DOI 10.5281/zenodo.23680672, concept DOI 10.5281/zenodo.23680671.
+
 Starting point: the supplied v0.1.0 package, imported unchanged in the
 first commit of this history. Changes made on top of it:
 

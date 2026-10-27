@@ -46,7 +46,8 @@ class TestReadmeClaims(unittest.TestCase):
         self.assertIn("0009-0000-9778-5374", zen)
         self.assertIn("AGPL-3.0-only", cff)
         self.assertIn("AGPL-3.0-only", zen)
-        self.assertNotIn("doi:", cff.lower())
+        self.assertIn("doi: 10.5281/zenodo.23680672", cff)
+        self.assertIn("10.5281/zenodo.23680671", cff)
 
     def test_design_keeps_falsified_designs_section(self):
         text = read("DESIGN.md")
