@@ -108,13 +108,27 @@ class Neuron:
 
 
 class HeartGeometry:
-    """Heart-shaped neuron layout + pacemaker delays (Dijkstra)."""
+    """Heart-shaped neuron layout + pacemaker delays (Dijkstra).
 
-    def __init__(self, n=64, seed=42, outline_frac=0.6, k=4):
+    ``pacemaker_xy`` is the point the pacemaker is placed nearest to
+    (default (0, 5), as supplied). ``k`` is the number of nearest
+    neighbours each neuron links to. If the k-nearest-neighbour graph
+    is disconnected (possible for some seeds and small k), the
+    closest pair of components is bridged by the shortest edge until
+    the graph is connected, so every delay is finite. For connected
+    graphs (including seed 42, n=64, k=4) nothing is added.
+    """
+
+    def __init__(self, n=64, seed=42, outline_frac=0.6, k=4,
+                 pacemaker_xy=(0.0, 5.0)):
         if n < 8:
             raise ValueError("n must be at least 8")
+        if not 1 <= k < n:
+            raise ValueError("k must satisfy 1 <= k < n")
         self.n = n
         self.seed = seed
+        self.k = k
+        self.bridges = 0
         rng = random.Random(seed)
         n_outline = max(4, int(round(n * outline_frac)))
         n_inner = n - n_outline
@@ -138,14 +152,16 @@ class HeartGeometry:
             inner.append((x * 0.5, y * 0.5))
         for j, (x, y) in enumerate(inner):
             neurons.append(Neuron(n_outline + j, x, y, "inner"))
+        px, py = pacemaker_xy
         pacemaker = min(
             neurons,
-            key=lambda neu: (neu.x - 0.0) ** 2 + (neu.y - 5.0) ** 2,
+            key=lambda neu: (neu.x - px) ** 2 + (neu.y - py) ** 2,
         )
         pacemaker.kind = "pacemaker"
         self.pacemaker_id = pacemaker.id
         self.neurons = neurons
         self.edges = self._connect(k)
+        self._adj = self._adjacency()
         self.delays = self._delays()
 
     def _connect(self, k):
@@ -158,16 +174,48 @@ class HeartGeometry:
             )
             for _, bid in dists[:k]:
                 edges.add((min(a.id, bid), max(a.id, bid)))
+        edges = self._bridge_components(edges)
         return sorted(edges)
 
-    def neighbours(self, nid):
-        out = []
+    def _components(self, edges):
+        parent = list(range(len(self.neurons)))
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        for a, b in edges:
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[max(ra, rb)] = min(ra, rb)
+        return [find(i) for i in range(len(self.neurons))]
+
+    def _bridge_components(self, edges):
+        while True:
+            comp = self._components(edges)
+            if len(set(comp)) == 1:
+                return edges
+            best = None
+            for a in self.neurons:
+                for b in self.neurons:
+                    if a.id < b.id and comp[a.id] != comp[b.id]:
+                        d = (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+                        if best is None or (d, a.id, b.id) < best:
+                            best = (d, a.id, b.id)
+            edges.add((best[1], best[2]))
+            self.bridges += 1
+
+    def _adjacency(self):
+        adj = {neu.id: [] for neu in self.neurons}
         for a, b in self.edges:
-            if a == nid:
-                out.append(b)
-            elif b == nid:
-                out.append(a)
-        return sorted(out)
+            adj[a].append(b)
+            adj[b].append(a)
+        return {nid: sorted(v) for nid, v in adj.items()}
+
+    def neighbours(self, nid):
+        return list(self._adj[nid])
 
     def _delays(self, velocity=1.0):
         by_id = {neu.id: neu for neu in self.neurons}
@@ -179,7 +227,7 @@ class HeartGeometry:
             if t > times[nid]:
                 continue
             a = by_id[nid]
-            for mid in self.neighbours(nid):
+            for mid in self._adj[nid]:
                 b = by_id[mid]
                 w = math.hypot(a.x - b.x, a.y - b.y) / velocity
                 if t + w < times[mid]:
