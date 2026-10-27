@@ -141,6 +141,22 @@ def study_c(seed, base, ood_cache):
         for kind in ("haar", "phase_scramble"):
             out[f"C/rule/diff_bal_{kind}/midpoint_minus_{strat}"] = (
                 rule[("midpoint", kind)] - rule[(strat, kind)])
+    # Noise-matched control: out-of-library probes get the same noise
+    # as the in-library probes (exploratory; see PROTOCOL amendment A1).
+    for kind in KINDS:
+        ood = ood_cache(heart, kind, BASE_SIGMA)
+        auc, bal = {}, {}
+        for g in taus:
+            sc = [gs.score(g, f) for f in ood]
+            auc[g] = roc_auc(in_scores[g], sc)
+            refuse = sum(v < taus[g][0] for v in sc) / len(sc)
+            bal[g] = (accept_in[g] + refuse) / 2.0
+            out[f"Cn/{g}/auc_{kind}"] = auc[g]
+            out[f"Cn/{g}/bal_{kind}"] = bal[g]
+        out[f"Cn/diff_auc_max_overlap_minus_wave_scan/{kind}"] = (
+            auc["max_overlap"] - auc["wave_scan"])
+        out[f"Cn/diff_auc_max_overlap_minus_magnitude_profile/{kind}"] = (
+            auc["max_overlap"] - auc["magnitude_profile"])
     return out
 
 
@@ -162,6 +178,11 @@ def study_d(seed, base, ood_cache):
         out[f"D/max_overlap_{kind}"] = mean(
             heart.max_overlap(f) for f in ood)
     out["D/max_overlap_in"] = mean(heart.max_overlap(f) for f in probes)
+    for kind in KINDS:
+        ood = ood_cache(heart, kind, BASE_SIGMA)
+        out[f"D/noisy/refuse_{kind}"] = refuse_rate(heart, ood)
+        out[f"D/noisy/max_overlap_{kind}"] = mean(
+            heart.max_overlap(f) for f in ood)
     return out
 
 
@@ -198,6 +219,23 @@ def study_f(seed, ood_cache):
     return out
 
 
+def study_g(seed):
+    """Does the phase structure matter? Magnitude-only recognition."""
+    out = {}
+    for sigma in SIGMAS_A:
+        heart = build_heart(seed)
+        gs = GateScores(heart, scan_points=4)
+        probes, labels = eval_in(heart, seed, sigma)
+        mag = sum(gs.classify_magnitude_only(f) == lab
+                  for f, lab in zip(probes, labels)) / len(probes)
+        ung, _, _ = recognition(heart, probes, labels)
+        p = f"G/s{skey(sigma)}"
+        out[f"{p}/acc_magnitude_only"] = mag
+        out[f"{p}/acc_complex"] = ung
+        out[f"{p}/diff_complex_minus_magnitude_only"] = ung - mag
+    return out
+
+
 def replicate(seed):
     """All studies for one seed. Pure function of the seed."""
     base_heart, base_tau, base_j = calibrated_heart(seed, BASE_SIGMA)
@@ -205,12 +243,13 @@ def replicate(seed):
     base = {"heart": base_heart, "cal_in": cal_in, "cal_ood": cal_ood}
     cache = {}
 
-    def ood_cache(heart, kind):
-        # Out-of-library eval sets depend only on the layout (seed) and
-        # the kind, so every study at n=64 reuses one set per kind.
-        key = (heart.n, heart.n_phases, kind)
+    def ood_cache(heart, kind, sigma=0.0):
+        # Out-of-library eval sets depend only on the layout (seed),
+        # the kind and the matched-noise level, so every study at the
+        # same n and phase count reuses one set per kind.
+        key = (heart.n, heart.n_phases, kind, sigma)
         if key not in cache:
-            cache[key] = eval_ood(heart, seed, kind)
+            cache[key] = eval_ood(heart, seed, kind, sigma)
         return cache[key]
 
     out = {}
@@ -220,4 +259,5 @@ def replicate(seed):
     out.update(study_d(seed, base, ood_cache))
     out.update(study_e(seed, ood_cache))
     out.update(study_f(seed, ood_cache))
+    out.update(study_g(seed))
     return out

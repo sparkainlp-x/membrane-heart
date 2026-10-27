@@ -53,9 +53,22 @@ def eval_in(heart, seed, sigma):
     return probes, labels
 
 
-def eval_ood(heart, seed, kind):
-    rng = rng_for("eval", seed, "ood", kind)
-    return [make_ood(heart, kind, rng) for _ in range(N_EVAL_OOD)]
+def eval_ood(heart, seed, kind, sigma=0.0):
+    """Held-out out-of-library probes of one kind.
+
+    ``sigma > 0`` adds the same absolute complex Gaussian noise that
+    in-library probes carry (a noise-matched control); the sigma = 0
+    stream is unchanged so earlier numbers stay reproducible.
+    """
+    if sigma > 0:
+        rng = rng_for("eval", seed, "ood", kind, skey(sigma))
+    else:
+        rng = rng_for("eval", seed, "ood", kind)
+    out = []
+    for _ in range(N_EVAL_OOD):
+        f = make_ood(heart, kind, rng)
+        out.append(noisy(f, sigma, rng) if sigma > 0 else f)
+    return out
 
 
 def calibrated_heart(seed, sigma, strategy="midpoint", **kw):

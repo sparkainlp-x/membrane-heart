@@ -152,7 +152,26 @@ checked by committing the result file and re-rendering it in CI.
 
 Any change to this protocol after this commit is listed here with the
 commit that made it, and must be committed before the CONFIRM run.
-(None yet.)
+A1 (committed before the CONFIRM run; the DEV run had already been
+looked at). The DEV output showed a confound: in-library probes carry
+noise (sigma 0.15) while most out-of-library kinds were noise-free, so
+a deformed stored wave could out-score a noisy in-library probe and be
+accepted simply for being cleaner. Two exploratory additions, neither
+touching H1 to H9 or any earlier key:
+
+- Noise-matched control: every out-of-library kind is also generated with
+  the same absolute noise as the in-library probes (sigma 0.15). New keys:
+  `D/noisy/...` (refusal and mean max overlap) and `Cn/...` (AUC and
+  balanced accuracy of the gates, as in C). The noise-free results remain
+  the pre-registered ones; the noise-matched results are reported next to
+  them, not instead of them.
+- Study G: does the phase structure matter? Recognition by a phase-blind
+  magnitude-only classifier (argmax cosine between the magnitude profile
+  of the probe and each stored magnitude profile) compared with complex
+  projection, at every sigma of study A, with the paired difference.
+
+The DEV result file was regenerated after these additions; the CONFIRM
+file is produced only after this amendment.
 
 ## What results do and do not mean
 

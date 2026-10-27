@@ -121,6 +121,17 @@ class GateScores:
         return max(sum(a * b for a, b in zip(mags, prof)) / norm
                    for prof in self.mag_profiles)
 
+    def classify_magnitude_only(self, field):
+        """Phase-blind recognition: argmax cosine of |field| with the
+        stored magnitude profiles (index, or None for a zero field)."""
+        mags = [abs(c) for c in field]
+        norm = math.sqrt(sum(m * m for m in mags))
+        if norm == 0:
+            return None
+        sims = [sum(a * b for a, b in zip(mags, prof)) / norm
+                for prof in self.mag_profiles]
+        return max(range(len(sims)), key=lambda i: sims[i])
+
     def constant(self, field):
         return 0.0
 

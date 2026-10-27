@@ -88,6 +88,22 @@ class TestStudies(unittest.TestCase):
             self.assertIn(f"D/refuse_{kind}", self.a)
             self.assertIn(f"C/max_overlap/auc_{kind}", self.a)
 
+    def test_noise_matched_and_magnitude_only_keys_present(self):
+        for kind in OOD_KINDS:
+            self.assertIn(f"D/noisy/refuse_{kind}", self.a)
+            self.assertIn(f"Cn/max_overlap/auc_{kind}", self.a)
+        self.assertIn("G/s0.15/acc_magnitude_only", self.a)
+        self.assertAlmostEqual(
+            self.a["G/s0.15/diff_complex_minus_magnitude_only"],
+            self.a["G/s0.15/acc_complex"]
+            - self.a["G/s0.15/acc_magnitude_only"], places=12)
+
+    def test_noise_matched_rotation_is_like_in_library(self):
+        # a globally rotated stored wave plus the same noise is a
+        # statistically ordinary in-library probe: refusal ~ 1 - accept
+        self.assertLess(abs(self.a["D/noisy/refuse_global_phase_rotation"]
+                            - (1 - self.a["D/accept_in"])), 0.15)
+
     def test_default_ablation_equals_study_a(self):
         self.assertEqual(self.a["B/s0.15/default/acc_ungated"],
                          self.a["A/s0.15/acc_ungated"])
@@ -105,6 +121,40 @@ class TestStudies(unittest.TestCase):
         self.assertEqual(run_all.trials_for("D/refuse_haar"), 50)
         self.assertIsNone(run_all.trials_for("B/s0.15/default/acc_ungated"))
         self.assertIsNone(run_all.trials_for("A/s0.15/tau"))
+
+
+class TestEvalOod(unittest.TestCase):
+    def test_noise_free_stream_unchanged_and_noisy_differs(self):
+        heart = build_heart(9001)
+        a = eval_ood(heart, 9001, "haar")
+        b = eval_ood(heart, 9001, "haar", 0.0)
+        c = eval_ood(heart, 9001, "haar", 0.15)
+        self.assertEqual(a, b)
+        self.assertNotEqual(a, c)
+        self.assertEqual(len(c), 50)
+
+    def test_noisy_fields_are_unit_norm(self):
+        heart = build_heart(9001)
+        for f in eval_ood(heart, 9001, "conjugate_wave", 0.15):
+            self.assertAlmostEqual(sum(abs(x) ** 2 for x in f), 1.0, places=9)
+
+
+class TestMagnitudeOnly(unittest.TestCase):
+    def test_classifies_clean_patterns_and_zero_field(self):
+        from membrane_heart.probes import GateScores
+        heart = build_heart(9001)
+        gs = GateScores(heart, scan_points=4)
+        for i, p in enumerate(heart.patterns):
+            self.assertEqual(gs.classify_magnitude_only(p), i)
+        self.assertIsNone(gs.classify_magnitude_only([0j] * 64))
+
+    def test_blind_to_global_phase_not_to_the_wave(self):
+        from membrane_heart.probes import GateScores
+        heart = build_heart(9001, envelope=False)
+        gs = GateScores(heart, scan_points=4)
+        # pure phase: all magnitudes equal -> ties -> index 0 for all
+        self.assertEqual({gs.classify_magnitude_only(p)
+                          for p in heart.patterns}, {0})
 
 
 class TestRunAll(unittest.TestCase):
