@@ -250,8 +250,11 @@ def render(confirm, dev):
     add("The four stored snapshots differ only by a global phase, so every "
         "stored pattern gives the same |overlap| up to floating-point "
         "rounding. Which phase wins is then decided by rounding and by the "
-        "tie rule (lowest index), and this column can differ across "
-        "platforms; it does not mean the memory recognises anything. The "
+        "tie rule (lowest index), and the phase-0 column can differ across "
+        "machines (one smoke replicate gave 0.71 on the development machine "
+        "and 0.98 on a GitHub-hosted runner, for every Python version tried "
+        "on each); the sigma 0.00 tau in study A is tie-dependent in the "
+        "same way. It does not mean the memory recognises anything. The "
         "gate still works as an accept/refuse test of wave-likeness.")
     add("")
     add("## 7. Study F: robustness map of the frozen gate")

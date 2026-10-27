@@ -173,7 +173,7 @@ Mean max overlap of in-library probes: 0.512.
 | 0.05 | 0.250 [0.247, 0.253] | 0.250 [0.247, 0.253] | 0.882 [0.876, 0.887] | 1.000 [1.000, 1.000] | 1.000 | 1.000 |
 | 0.15 | 0.251 [0.247, 0.255] | 0.250 [0.246, 0.254] | 0.781 [0.774, 0.788] | 0.998 [0.997, 0.999] | 0.999 | 1.000 |
 
-The four stored snapshots differ only by a global phase, so every stored pattern gives the same |overlap| up to floating-point rounding. Which phase wins is then decided by rounding and by the tie rule (lowest index), and this column can differ across platforms; it does not mean the memory recognises anything. The gate still works as an accept/refuse test of wave-likeness.
+The four stored snapshots differ only by a global phase, so every stored pattern gives the same |overlap| up to floating-point rounding. Which phase wins is then decided by rounding and by the tie rule (lowest index), and the phase-0 column can differ across machines (one smoke replicate gave 0.71 on the development machine and 0.98 on a GitHub-hosted runner, for every Python version tried on each); the sigma 0.00 tau in study A is tie-dependent in the same way. It does not mean the memory recognises anything. The gate still works as an accept/refuse test of wave-likeness.
 
 ## 7. Study F: robustness map of the frozen gate
 
