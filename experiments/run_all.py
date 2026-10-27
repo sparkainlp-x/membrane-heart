@@ -80,6 +80,20 @@ def _test(args):
     return hid, p
 
 
+def _abl_test(args):
+    key, vals, resamples = args
+    return key, bootstrap_p(vals, 0.0, rng_for("boot", "ablation", key),
+                            resamples, "two-sided")
+
+
+def _supported(hid, p_holm, row):
+    """Protocol rule. H3 is a null-retention control (amendment A2)."""
+    if hid == "H3":
+        return (p_holm >= 0.05 and row["lo"] >= 0.23
+                and row["hi"] <= 0.27)
+    return p_holm < 0.05
+
+
 def run(set_name, jobs, ci_resamples, test_resamples):
     seeds = SEED_SETS[set_name]
     ctx = multiprocessing.get_context("fork") if jobs > 1 else None
@@ -104,6 +118,20 @@ def run(set_name, jobs, ci_resamples, test_resamples):
             pvals = dict(pool.map(_test, tests))
     else:
         pvals = dict(map(_test, tests))
+    # Second, separate family (exploratory): paired ablation differences
+    # in ungated accuracy against the default, Holm-adjusted together.
+    abl_keys = [k for k in keys if k.startswith("B/")
+                and k.endswith("/diff_acc_ungated")]
+    abl_work = [(k, series[k], ci_resamples) for k in abl_keys]
+    if jobs > 1:
+        with ctx.Pool(jobs) as pool:
+            abl_p = dict(pool.map(_abl_test, abl_work, chunksize=4))
+    else:
+        abl_p = dict(map(_abl_test, abl_work))
+    abl_adj = holm([abl_p[k] for k in abl_keys])
+    for k, a in zip(abl_keys, abl_adj):
+        rows[k]["p"] = round(abl_p[k], 6)
+        rows[k]["p_holm"] = round(a, 6)
     adj = holm([pvals[h[0]] for h in HYPOTHESES])
     hyps = []
     for (hid, key, null, alt, text), a in zip(HYPOTHESES, adj):
@@ -112,7 +140,7 @@ def run(set_name, jobs, ci_resamples, test_resamples):
             "statement": text, "mean": rows[key]["mean"],
             "lo": rows[key]["lo"], "hi": rows[key]["hi"],
             "p": round(pvals[hid], 6), "p_holm": round(a, 6),
-            "supported": a < 0.05,
+            "supported": _supported(hid, a, rows[key]),
         })
     return {
         "meta": {

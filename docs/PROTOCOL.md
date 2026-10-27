@@ -170,8 +170,20 @@ touching H1 to H9 or any earlier key:
   of the probe and each stored magnitude profile) compared with complex
   projection, at every sigma of study A, with the paired difference.
 
+A2 (committed before the CONFIRM run). H3 is a null-retention control:
+"supported" cannot mean a rejected null. The control passes if the
+Holm-adjusted two-sided p is at least 0.05 AND the 95 % interval of the
+mean lies inside 0.23 to 0.27; otherwise it fails and would indicate
+leakage between labels and probes. For H7 (two-sided, null 0) the usual
+rule applies (supported when the adjusted p is below 0.05), and the size
+of the difference is reported next to it because a significant
+difference of a fraction of a percentage point is not a practical one.
+The ablation difference family is two-sided against 0 with the same
+Holm rule. Bootstrap p-values cannot go below about 1/(resamples + 1),
+so Holm-adjusted p-values are floored accordingly.
+
 The DEV result file was regenerated after these additions; the CONFIRM
-file is produced only after this amendment.
+file is produced only after these amendments.
 
 ## What results do and do not mean
 

@@ -177,3 +177,45 @@ class TestRunAll(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestProtocolRules(unittest.TestCase):
+    def test_h3_is_null_retention_control(self):
+        ok = {"lo": 0.243, "hi": 0.255}
+        self.assertTrue(run_all._supported("H3", 0.64, ok))
+        self.assertFalse(run_all._supported("H3", 0.01, ok))
+        self.assertFalse(run_all._supported("H3", 0.64,
+                                            {"lo": 0.20, "hi": 0.255}))
+        self.assertFalse(run_all._supported("H3", 0.64,
+                                            {"lo": 0.243, "hi": 0.30}))
+
+    def test_other_hypotheses_use_holm_p_below_005(self):
+        row = {"lo": 0.0, "hi": 1.0}
+        self.assertTrue(run_all._supported("H1", 0.049, row))
+        self.assertFalse(run_all._supported("H1", 0.05, row))
+
+
+class TestRender(unittest.TestCase):
+    def test_render_is_deterministic_and_complete(self):
+        import json
+        import os
+        from experiments import render_results as rr
+        path = os.path.join(rr.DOCS, "results", "dev.json")
+        if not os.path.exists(path):
+            self.skipTest("no dev results committed")
+        with open(path, encoding="utf-8") as fh:
+            d = json.load(fh)
+        a, b = rr.render(d, d), rr.render(d, d)
+        self.assertEqual(a, b)
+        for section in ("## 1.", "## 2.", "## 3.", "## 4.", "## 5.",
+                        "## 6.", "## 7.", "## 8."):
+            self.assertIn(section, a)
+        self.assertIn("SYNTHETIC", a)
+        self.assertNotIn("-0.000", a)
+
+    def test_classify_thresholds(self):
+        from experiments.render_results import classify
+        self.assertEqual(classify(0.90), "REFUSED")
+        self.assertEqual(classify(0.8999), "PARTLY REFUSED")
+        self.assertEqual(classify(0.0999), "NOT REFUSED")
+        self.assertEqual(classify(0.10), "PARTLY REFUSED")
