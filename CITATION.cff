@@ -10,6 +10,14 @@ authors:
     orcid: https://orcid.org/0009-0000-9778-5374
     affiliation: Spark AI NLP
 license: AGPL-3.0-only
+doi: 10.5281/zenodo.23680672
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23680672
+    description: Version 0.1.0 (Zenodo)
+  - type: doi
+    value: 10.5281/zenodo.23680671
+    description: Concept DOI, all versions (Zenodo)
 repository-code: https://github.com/sparkainlp-x/membrane-heart
 abstract: >-
   SYNTHETIC toy. A heart-shaped network of simulated neurons carries a
