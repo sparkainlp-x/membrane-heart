@@ -1,4 +1,4 @@
-"""Tests for membrane-heart v0.1.0. Run: python tests.py"""
+"""The eight tests supplied with v0.1.0 (adapted: see DESIGN.md)."""
 
 import math
 import unittest
@@ -36,22 +36,21 @@ class TestMembraneHeart(unittest.TestCase):
 
     def test_clean_phase_recognition(self):
         heart = MembraneHeart(n=64, seed=42)
-        heart.tau = None  # no gate: pure projection
+        # v0.1.0 used decide() with tau=None as ungated projection;
+        # decide() now fails closed, so use classify() (see DESIGN.md).
         for i, t in enumerate((0.0, 10.0, 20.0, 30.0)):
-            verdict, name, _ = heart.decide(heart.field(t))
-            self.assertEqual(verdict, "accept")
-            self.assertEqual(name, heart.PHASE_NAMES[i])
+            self.assertEqual(heart.classify(heart.field(t)),
+                             heart.PHASE_NAMES[i])
 
     def test_noisy_recognition(self):
         heart = MembraneHeart(n=64, seed=42)
-        heart.tau = None
         rng = random.Random(7)
         ok = 0
         trials = 40
         for k in range(trials):
             t = (k % 4) * 10.0
             probe = noisy(heart.field(t), 0.15, rng)
-            _, name, _ = heart.decide(probe)
+            name = heart.classify(probe)
             ok += name == heart.PHASE_NAMES[k % 4]
         self.assertGreaterEqual(ok / trials, 0.90)
 

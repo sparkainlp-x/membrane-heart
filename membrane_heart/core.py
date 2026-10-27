@@ -67,6 +67,13 @@ import random
 
 __version__ = "0.1.0"
 
+__all__ = [
+    "HeartGeometry", "MembraneHeart", "Neuron", "TAU_STRATEGIES",
+    "calibrate_tau", "heart_curve_point", "is_finite_field",
+    "legacy_scrambled_field", "noisy", "normalize", "overlap",
+    "phase_scrambled_field", "rand_field",
+]
+
 
 # ---------------------------------------------------------------- geometry
 def heart_curve_point(t):
@@ -248,6 +255,11 @@ def overlap(field, pattern):
     return sum(p.conjugate() * f for p, f in zip(pattern, field))
 
 
+def is_finite_field(field):
+    return all(math.isfinite(c.real) and math.isfinite(c.imag)
+               for c in field)
+
+
 def rand_field(n, rng):
     """Haar-random unit complex field (an out-of-library probe)."""
     return normalize(
@@ -256,6 +268,9 @@ def rand_field(n, rng):
 
 
 def noisy(field, sigma, rng):
+    """Add i.i.d. complex Gaussian noise (std sigma per real part and
+    per imaginary part, absolute, not relative to the field) and
+    renormalise. The input list is not modified."""
     return normalize(
         [c + complex(rng.gauss(0, sigma), rng.gauss(0, sigma))
          for c in field]
@@ -281,44 +296,145 @@ def legacy_scrambled_field(n, seed):
     ])
 
 
+TAU_STRATEGIES = ("midpoint", "first", "midpoint_all", "median")
+
+
+def calibrate_tau(in_scores, ood_scores, grid=101, strategy="midpoint"):
+    """Choose a gate threshold from calibration scores. Returns (tau, J).
+
+    Accept rule is ``score >= tau`` (the gate rejects ``score < tau``).
+    J = TPR - FPR (Youden) is evaluated on tau = i/grid, i = 0..grid.
+    Among the taus with maximal J (ties within 1e-12):
+
+    - "midpoint" (default): midpoint of the LONGEST contiguous run of
+      maximal-J grid points (first run wins ties). This keeps tau
+      inside a real plateau when maximal-J points are split.
+    - "midpoint_all": midpoint of the first and last maximal-J tau,
+      the v0.1.0 rule; it can fall outside the plateau if the
+      maximal-J points are not contiguous.
+    - "first": the first (lowest) maximal-J tau.
+    - "median": the median maximal-J tau.
+    """
+    if strategy not in TAU_STRATEGIES:
+        raise ValueError(f"strategy must be one of {TAU_STRATEGIES}")
+    in_scores = list(in_scores)
+    ood_scores = list(ood_scores)
+    if not in_scores or not ood_scores:
+        raise ValueError("calibration needs in-library and "
+                         "out-of-library probes")
+    if grid < 1:
+        raise ValueError("grid must be at least 1")
+    if not all(math.isfinite(v) for v in in_scores + ood_scores):
+        raise ValueError("calibration scores must be finite")
+    best_j, best_idx = -2.0, []
+    for step in range(grid + 1):
+        tau = step / grid
+        tpr = sum(1 for v in in_scores if v >= tau) / len(in_scores)
+        fpr = sum(1 for v in ood_scores if v >= tau) / len(ood_scores)
+        j = tpr - fpr
+        if j > best_j + 1e-12:
+            best_j, best_idx = j, [step]
+        elif abs(j - best_j) <= 1e-12:
+            best_idx.append(step)
+    if strategy == "first":
+        step = best_idx[0]
+        return step / grid, best_j
+    if strategy == "midpoint_all":
+        return (best_idx[0] + best_idx[-1]) / (2.0 * grid), best_j
+    if strategy == "median":
+        m = len(best_idx)
+        mid = (best_idx[m // 2] + best_idx[(m - 1) // 2]) / 2.0
+        return mid / grid, best_j
+    runs, run = [], [best_idx[0]]
+    for step in best_idx[1:]:
+        if step == run[-1] + 1:
+            run.append(step)
+        else:
+            runs.append(run)
+            run = [step]
+    runs.append(run)
+    longest = max(runs, key=len)  # max keeps the first of equal lengths
+    return (longest[0] + longest[-1]) / (2.0 * grid), best_j
+
+
 class MembraneHeart:
-    """Travelling-wave heart + holographic membrane + refusal gate."""
+    """Travelling-wave heart + holographic membrane + refusal gate.
+
+    ``n_phases`` snapshots at t = i * period / n_phases are stored.
+    ``envelope=False`` stores pure phase waves (the documented failure
+    case: snapshots then differ only by a global phase).
+    A gate that has not been calibrated (``tau is None``) refuses
+    everything in :meth:`decide` (fail closed); use :meth:`classify`
+    for ungated projection.
+    """
 
     PHASE_NAMES = ("rest", "atrial", "ventricular", "recovery")
 
-    def __init__(self, n=64, seed=42, period=40.0):
-        if period <= 0:
-            raise ValueError("period must be positive")
-        self.geometry = HeartGeometry(n=n, seed=seed)
+    def __init__(self, n=64, seed=42, period=40.0, width=8.0,
+                 n_phases=4, k=4, envelope=True,
+                 pacemaker_xy=(0.0, 5.0)):
+        if period <= 0 or not math.isfinite(period):
+            raise ValueError("period must be positive and finite")
+        if width <= 0 or not math.isfinite(width):
+            raise ValueError("width must be positive and finite")
+        if n_phases < 2:
+            raise ValueError("n_phases must be at least 2")
+        self.geometry = HeartGeometry(n=n, seed=seed, k=k,
+                                      pacemaker_xy=pacemaker_xy)
         self.n = n
-        self.period = period
+        self.period = float(period)
+        self.width = float(width)
+        self.envelope = bool(envelope)
+        self.n_phases = n_phases
         self.delays = self.geometry.delays
-        # Four stored beat phases, as unit complex fields.
-        self.patterns = [
-            self.field(t) for t in (0.0, period / 4, period / 2,
-                                    3 * period / 4)
-        ]
+        if n_phases == len(self.PHASE_NAMES):
+            self.phase_names = self.PHASE_NAMES
+        else:
+            self.phase_names = tuple(f"phase_{i}" for i in range(n_phases))
+        self.phase_times = tuple(i * self.period / n_phases
+                                 for i in range(n_phases))
+        self.patterns = [self.field(t) for t in self.phase_times]
         self.tau = None
 
-    def field(self, t, width=8.0):
-        """Enveloped travelling-wave field at time t, unit length."""
+    def field(self, t, width=None):
+        """Enveloped travelling-wave field at time t, unit length.
+
+        With ``envelope=False`` the amplitude is 1 for every neuron.
+        """
+        w = self.width if width is None else width
         out = []
         for d in self.delays:
             s = (t - d) % self.period
-            amp = math.exp(-(s * s) / (2.0 * width * width))
+            amp = (math.exp(-(s * s) / (2.0 * w * w))
+                   if self.envelope else 1.0)
             phase = 2.0 * math.pi * (t - d) / self.period
             out.append(amp * complex(math.cos(phase), math.sin(phase)))
         return normalize(out)
 
+    def _check_length(self, field):
+        if len(field) != self.n:
+            raise ValueError(
+                f"field has {len(field)} entries, expected {self.n}")
+
     def coherence(self, field, t):
         """1.0 = field follows the wave exactly; ~0.125 = random."""
+        self._check_length(field)
         return abs(overlap(field, self.field(t)))
 
     def overlaps(self, field):
+        self._check_length(field)
         return [overlap(field, p) for p in self.patterns]
 
     def project(self, field):
+        """(winner index or None, probabilities).
+
+        None for a zero or non-finite field. Exact ties go to the
+        lowest index (documented; see DESIGN.md for why that matters
+        for pure-phase storage).
+        """
         ms = self.overlaps(field)
+        if not is_finite_field(ms):
+            return None, [0.0] * len(ms)
         tot = sum(abs(m) ** 2 for m in ms)
         if tot == 0:
             return None, [0.0] * len(ms)
@@ -326,33 +442,43 @@ class MembraneHeart:
         return max(range(len(ms)), key=lambda i: abs(ms[i])), probs
 
     def max_overlap(self, field):
-        return max(abs(m) for m in self.overlaps(field))
+        ms = self.overlaps(field)
+        if not is_finite_field(ms):
+            return float("nan")
+        return max(abs(m) for m in ms)
 
-    def calibrate(self, in_probes, ood_probes, grid=101):
-        """Freeze tau: midpoint of the taus maximising Youden's J."""
+    def classify(self, field):
+        """Ungated projection: phase name or None. No refusal."""
+        winner, _ = self.project(field)
+        return None if winner is None else self.phase_names[winner]
+
+    def calibrate(self, in_probes, ood_probes, grid=101,
+                  strategy="midpoint"):
+        """Freeze tau from calibration probes. Returns (tau, J).
+
+        Calibration probes must be disjoint from evaluation probes;
+        this method cannot check that, so experiments derive separate
+        seeds (see membrane_heart.stats.derive_seed).
+        """
         in_max = [self.max_overlap(f) for f in in_probes]
         ood_max = [self.max_overlap(f) for f in ood_probes]
-        best_j, best_taus = -2.0, []
-        for step in range(grid + 1):
-            tau = step / grid
-            tpr = sum(1 for v in in_max if v >= tau) / len(in_max)
-            fpr = sum(1 for v in ood_max if v >= tau) / len(ood_max)
-            j = tpr - fpr
-            if j > best_j + 1e-12:
-                best_j, best_taus = j, [tau]
-            elif abs(j - best_j) <= 1e-12:
-                best_taus.append(tau)
-        self.tau = (best_taus[0] + best_taus[-1]) / 2.0
-        return self.tau, best_j
+        tau, j = calibrate_tau(in_max, ood_max, grid, strategy)
+        self.tau = tau
+        return tau, j
 
     def decide(self, field):
-        """('accept', phase_name, probs) or ('reject', None, probs)."""
+        """('accept', phase_name, probs) or ('reject', None, probs).
+
+        Fail closed: an uncalibrated gate, a zero field, or a
+        non-finite field is rejected. A field of the wrong length
+        raises ValueError. ``max_overlap == tau`` is accepted.
+        """
         winner, probs = self.project(field)
-        if winner is None:
+        if winner is None or self.tau is None:
             return "reject", None, probs
-        if self.tau is not None and self.max_overlap(field) < self.tau:
+        if self.max_overlap(field) < self.tau:
             return "reject", None, probs
-        return "accept", self.PHASE_NAMES[winner], probs
+        return "accept", self.phase_names[winner], probs
 
     def scrambled_field(self, seed):
         """A broken beat: unit magnitudes, uniformly random phases.
@@ -371,3 +497,14 @@ class MembraneHeart:
         despite the v0.1.0 description. See DESIGN.md.
         """
         return legacy_scrambled_field(self.n, seed)
+
+    def pattern_gram(self):
+        """|<p_i, p_j>| matrix of the stored patterns."""
+        return [[abs(overlap(pj, pi)) for pj in self.patterns]
+                for pi in self.patterns]
+
+    def max_neighbour_overlap(self):
+        """Largest |<p_i, p_{i+1 mod n_phases}>| (cyclic neighbours)."""
+        g = self.pattern_gram()
+        m = self.n_phases
+        return max(g[i][(i + 1) % m] for i in range(m))
