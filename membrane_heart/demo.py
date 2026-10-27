@@ -8,7 +8,7 @@ wave vs a scrambled one.
 
 import random
 
-from membrane_heart import MembraneHeart, noisy, rand_field
+from .core import MembraneHeart, noisy, rand_field
 
 
 def main():
