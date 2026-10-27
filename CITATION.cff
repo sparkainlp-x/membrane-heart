@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata in this file."
+title: "membrane-heart"
+type: software
+version: 0.1.0
+authors:
+  - family-names: Brisson
+    given-names: Jean-François
+    orcid: https://orcid.org/0009-0000-9778-5374
+    affiliation: Spark AI NLP
+license: AGPL-3.0-only
+repository-code: https://github.com/sparkainlp-x/membrane-heart
+abstract: >-
+  SYNTHETIC toy. A heart-shaped network of simulated neurons carries a
+  travelling phase wave; snapshots are stored in a complex outer-product
+  associative memory and a calibrated gate names or refuses a probe.
+  Classical, stdlib-only Python. Not a medical model, not a medical
+  device, not a diagnosis. No release or DOI has been issued yet.
+keywords:
+  - associative-memory
+  - toy-model
+  - synthetic
+  - reproducible-research

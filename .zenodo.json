@@ -1,0 +1,21 @@
+{
+  "upload_type": "software",
+  "title": "membrane-heart",
+  "version": "0.1.0",
+  "description": "SYNTHETIC toy (classical software, not a medical model): a heart-shaped network of simulated neurons carries a travelling phase wave; snapshots are stored in a complex outer-product associative memory and a calibrated gate names or refuses a probe. Includes pre-registered, seeded studies with confidence intervals, including null and negative results. Not a medical device, not a diagnosis; nothing transfers to real physiology.",
+  "creators": [
+    {
+      "name": "Brisson, Jean-François",
+      "affiliation": "Spark AI NLP",
+      "orcid": "0009-0000-9778-5374"
+    }
+  ],
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "associative-memory",
+    "toy-model",
+    "synthetic",
+    "reproducible-research"
+  ],
+  "notes": "Synthetic toy simulation. Not a medical model. Deposit metadata only; no release has been approved or made."
+}

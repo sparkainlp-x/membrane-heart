@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "membrane-heart"
+version = "0.1.0"
+description = "SYNTHETIC toy: a heart-shaped travelling-wave network stored in an associative memory with a refusing gate. Not a medical model."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [{ name = "Jean-François Brisson" }]
+keywords = ["associative-memory", "toy-model", "synthetic", "reproducible-research"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+]
+# Runtime is the standard library only.
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/sparkainlp-x/membrane-heart"
+
+[project.scripts]
+membrane-heart = "membrane_heart.demo:main"
+
+[tool.setuptools]
+packages = ["membrane_heart"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
