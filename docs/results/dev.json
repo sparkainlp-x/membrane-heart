@@ -37,7 +37,7 @@
    "p": 0.638636,
    "p_holm": 0.638636,
    "statement": "label-shuffled recognition equals chance (0.25)",
-   "supported": false
+   "supported": true
   },
   {
    "alternative": "less",

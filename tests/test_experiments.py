@@ -211,7 +211,8 @@ class TestRender(unittest.TestCase):
                         "## 6.", "## 7.", "## 8."):
             self.assertIn(section, a)
         self.assertIn("SYNTHETIC", a)
-        self.assertNotIn("-0.000", a)
+        import re
+        self.assertIsNone(re.search(r"-0\.0+(?![0-9])", a))
 
     def test_classify_thresholds(self):
         from experiments.render_results import classify
