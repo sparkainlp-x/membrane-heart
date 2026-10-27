@@ -1,10 +1,12 @@
-"""membrane-heart v0.1.0 — a sparkainlp-x membrane simulating a heart.
+"""membrane-heart v0.1.0: a SYNTHETIC heart-shaped travelling-wave toy.
 
-Stdlib-only Python, seeded, reproducible, AGPL-3.0-only.
+Not a medical model. Stdlib-only Python, seeded, reproducible,
+AGPL-3.0-only. Copyright (C) 2026 Jean-François Brisson.
 
 What is reused, exactly
 ------------------------
-1. Geometry from holo-heart-neurons: the classic parametric heart
+1. Geometry as supplied with v0.1.0 (named there as holo-heart-neurons;
+   no such repository was found, see README): the classic parametric heart
    curve, 64 seeded neurons (outline + interior), 4-nearest-neighbour
    edges, a pacemaker, and beat propagation by Dijkstra
    (activation delay = shortest-path distance / velocity).
@@ -56,9 +58,9 @@ Not a human heart. Not cardiac electrophysiology (no ionic currents,
 no atria/ventricles, no ECG, no refractory period, no re-entry).
 Not a medical device, not a diagnosis, not a measurement of any real
 person. The "heart" is a parametric curve; the "beat" is a phase wave;
-the "arrhythmia" is a scrambled phase field. Synthetic, toy,
+a "scrambled" probe is a random-phase field. Synthetic, toy,
 educational — a demonstration that the membrane frame can hold,
-recognise, and refuse beat states.
+recognise, and refuse synthetic wave snapshots.
 """
 
 import heapq
