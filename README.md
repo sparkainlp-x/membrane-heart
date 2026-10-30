@@ -1,8 +1,8 @@
 # membrane-heart
 
 A SYNTHETIC toy: a heart-shaped network of 64 simulated neurons carries a
-travelling phase wave. Snapshots of the wave are stored in a complex
-outer-product associative memory, and a calibrated gate either names the
+travelling phase wave. Snapshots of the wave are stored as patterns for overlap recall,
+and a calibrated gate either names the
 snapshot or refuses the probe. Classical, stdlib-only Python, seeded and
 reproducible.
 
@@ -36,7 +36,7 @@ Do not use it for health decisions.
 - The gate is blind to a global phase rotation of a stored wave, accepts
   waves that sit between stored phases, and the studies in
   `docs/RESULTS.md` list further fields it does NOT refuse.
-- "Holographic" means an outer-product associative memory in the sense of
+- "Holographic" means overlap recall over stored patterns in the sense of
   the lineage repositories below. It is not a laser hologram or a display.
 - The noise parameter sigma is absolute per real and imaginary component,
   while each component of a unit-norm 64-neuron field has root-mean-square
